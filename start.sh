@@ -11,7 +11,7 @@ if [ -d "$projdir/venv" ]; then
       fi
     fi
   fi
-  deactivate
+  deactivate 2>/dev/null
 else
   echo "Virtual env not found."
 fi

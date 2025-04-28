@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 cmd_exists() {
   command -v "$1" >/dev/null 2>&1
@@ -49,6 +49,7 @@ if (( ${#pkg_mngr[@]} )); then
 
   [[ -f requirements.txt ]] && pip -qqq install -r requirements.txt --break-system-packages
 
+<<<<<<< HEAD
   base_dir="$(pwd)/USERDATA"
   mkdir -p "$base_dir"
   params=()
@@ -70,3 +71,6 @@ if (( ${#pkg_mngr[@]} )); then
 
   deactivate
 fi
+=======
+deactivate
+>>>>>>> 929002e06c7be73391bebbea9947885617811474

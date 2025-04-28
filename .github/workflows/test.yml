@@ -1,0 +1,21 @@
+name: Test
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Run Script
+        shell: bash
+        run: |
+          chmod +x start.sh
+          ./start.sh
+
+      - name: Auto Commit Changes
+        uses: stefanzweifel/git-auto-commit-action@v5

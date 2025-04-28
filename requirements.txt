@@ -1,4 +1,3 @@
 deepdiff
-python-dotenv
 requests
 selenium==4.9.1

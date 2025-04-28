@@ -1,8 +1,10 @@
+import argparse
 import os
 import json
+import re
 import requests
 import sys
-from dotenv import load_dotenv
+# from dotenv import load_dotenv
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -11,33 +13,6 @@ from selenium.common.exceptions import TimeoutException, NoSuchElementException,
 from urllib.parse import urljoin
 from datetime import datetime
 import time
-
-# Load environment variables from .env file
-load_dotenv()
-
-# Setup the Chrome options
-options = webdriver.ChromeOptions()
-options.add_argument("--no-sandbox")
-options.add_argument("--disable-dev-shm-usage")
-options.add_argument("--display=:1")
-# Uncomment the next line for headless mode
-options.add_argument("--headless")
-
-# Optional: Specify the path to the ChromeDriver if not in PATH
-# DRIVER_PATH = os.getenv("CHROME_DRIVER_PATH", "path/to/chromedriver")
-# driver = webdriver.Chrome(executable_path=DRIVER_PATH, options=options)
-
-try:
-    driver = webdriver.Chrome(options=options)
-except Exception as e:
-    print(f"Error initializing Chrome WebDriver: {e}")
-    sys.exit(1)
-
-nav_url = os.getenv("TAMS_BASE_URL")
-if not nav_url:
-    print("Base URL is not set. Please set the 'TAMS_BASE_URL' in your .env file.")
-    driver.quit()
-    sys.exit(1)
 
 global_timeout = 10  # Increased timeout for better reliability
 
@@ -49,6 +24,62 @@ def print_error(message):
 
 def print_warning(message):
     print(f"\033[93m  ⚠️ {message}\033[0m")  # Yellow (close to orange) text
+
+def init(params):
+    global nav_url
+    global username
+    global password
+    global driver
+
+    nav_url = params.homepage
+    username = params.username
+    password = params.password
+
+    # Load environment variables from .env file
+    # load_dotenv()
+
+    # Setup the Chrome options
+    options = webdriver.ChromeOptions()
+
+    args=(
+        "--no-sandbox",
+        "--disable-dev-shm-usage",
+        "--display=:1",
+        "--start-maximized",
+        "--disable-extensions",
+        "--disable-fine-grained-time-zone-detection",
+        "--headless=new"
+    )
+
+    for arg in args:
+        options.add_argument(arg)
+
+    options.page_load_strategy = "eager"
+    options.unhandled_prompt_behavior = "accept"
+    options.accept_insecure_certs = True
+
+    load_timeout = global_timeout * 1000
+    for type in ["pageLoad", "implicit"]:
+        options.timeouts = { type: load_timeout }
+
+
+    # Optional: Specify the path to the ChromeDriver if not in PATH
+    # DRIVER_PATH = os.getenv("CHROME_DRIVER_PATH", "path/to/chromedriver")
+    # driver = webdriver.Chrome(executable_path=DRIVER_PATH, options=options)
+
+    try:
+        driver = webdriver.Chrome(options=options)
+    except WebDriverException as e:
+        print_error(f"WebDriver error: {e}")
+        sys.exit(1)
+    except Exception as e:
+        print_error(f"Unexpected error: {e}")
+        sys.exit(1)
+
+    if not nav_url:
+        print_error("Error: Base URL is not set.")
+        driver.quit()
+        sys.exit(1)
 
 # Function to convert date string to timestamp for sorting
 def parse_date(date_str):
@@ -71,7 +102,10 @@ def sort_by_date(data, data_key=None):
 
   return sorted(data, key=lambda x: parse_date(x[sort_key]), reverse=True)
 
-def check_internet(url=nav_url, timeout=global_timeout, retries=3):
+def check_internet(url=None, timeout=global_timeout, retries=3):
+    if url is None:
+        url = nav_url
+
     for attempt in range(1, retries + 1):
         try:
             response = requests.get(url, timeout=timeout)
@@ -92,10 +126,12 @@ def check_internet(url=nav_url, timeout=global_timeout, retries=3):
     sys.exit(1)
 
 def navigate(url):
+    new_url = f"{nav_url}/tams/"
+
     if any(keyword in url.lower() for keyword in ["overtime", "officialbusiness", "leave"]):
-        full_url = urljoin(nav_url, f"filing/{url}")
+        full_url = urljoin(new_url, f"filing/{url}")
     else:
-        full_url = urljoin(nav_url, url)
+        full_url = urljoin(new_url, url)
     
     try:
         driver.get(full_url)
@@ -182,7 +218,16 @@ def process_element(parent=None, by=By.ID, locator=None, multiple=False, timeout
         print_error(f"Error processing element '{locator}' by {by}: {e}")
         return None
 
-def login():
+def normalize_spaces(text):
+    if not isinstance(text, str):
+        text = str(text)
+    # Collapse all whitespace into single spaces
+    text = re.sub(r'\s+', ' ', text.strip())
+    # Remove space before commas
+    text = re.sub(r'\s+,', ',', text)
+    return text
+
+def login(params):
     try:
         # Assuming login-form is identified by ID; adjust as needed
         login_form = process_element(by=By.ID, locator="login-form")
@@ -191,21 +236,15 @@ def login():
             driver.quit()
             sys.exit(1)
         
-        values = ["username", "password"]
-        
-        for value in values:
-            input_value = os.getenv(value.upper())
-            if not input_value:
-                print_error(f"Environment variable '{value.upper()}' not set.")
-                driver.quit()
-                sys.exit(1)
-            el = process_element(login_form, by=By.NAME, locator=value)
-            if not el:
-                print_error(f"Login input '{value}' not found.")
-                driver.quit()
-                sys.exit(1)
-            el.clear()
-            el.send_keys(input_value)
+        for key, value in vars(params).items():
+            if key != "homepage":
+                el = process_element(login_form, by=By.NAME, locator=key)
+                if not el:
+                    print_error(f"Login input '{key}' not found.")
+                    driver.quit()
+                    sys.exit(1)
+                el.clear()
+                el.send_keys(value)
 
         # Submit the form; assuming there's a submit button
         submit_button = process_element(login_form, by=By.XPATH, locator=".//button[@type='submit']")
@@ -217,12 +256,12 @@ def login():
         else:
             login_form.submit()
         
-        # Wait for login success, e.g., presence of employee_id element
-        login_success = process_element(by=By.ID, locator="employee_id")
-        if login_success:
-            print_success("Login successful!")
+        # Wait for login success, e.g., presence of lastname element
+        full_name = normalize_spaces(process_element(by=By.ID, locator="lastname").get_attribute("value"))
+        if full_name:
+            print_success(f"Logged in as: [{full_name}].")
         else:
-            print_error("Login failed: 'employee_id' element not found.")
+            print_error("Login failed: 'lastname' element not found.")
             driver.quit()
             sys.exit(1)
     
@@ -232,6 +271,15 @@ def login():
         sys.exit(1)
 
 def main():
+    arg_defaults = ["homepage", "username", "password"]
+    parser = argparse.ArgumentParser(description="TAMS Automater")
+    
+    for arg in arg_defaults:
+        parser.add_argument(arg, help=arg.capitalize())
+        
+    params = parser.parse_args()
+    init(params)
+
     try:
         if not check_internet():
             print_error("No internet connection. Please check your connection and try again.")
@@ -239,7 +287,7 @@ def main():
             sys.exit(1)
         
         navigate("Auth")
-        login()
+        login(params)
     
         url_list = ["attendance", "overtime", "officialbusiness", "leave"]
         main_table_data = {}
@@ -347,7 +395,6 @@ def main():
             print_error("No data collected from any of the URLs.")
     
     finally:
-        time.sleep(50)
         driver.quit()
 
 if __name__ == "__main__":

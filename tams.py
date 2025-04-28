@@ -25,15 +25,36 @@ def print_error(message):
 def print_warning(message):
     print(f"\033[93m  ⚠️ {message}\033[0m")  # Yellow (close to orange) text
 
-def init(params):
-    global nav_url
+def set_global(name, value):
+    globals()[name] = value
+
+def parse_params(params):
+    param_dict = {}
+    for param in params:
+        key, value = param.split('=')
+        param_dict[key] = value
+    return param_dict
+
+def init():
+    global params
+    global homepage
     global username
     global password
+    global user_data
     global driver
+    global arg_defaults
 
-    nav_url = params.homepage
+    arg_defaults = ["homepage", "username", "password", "user_data"]
+    parser = argparse.ArgumentParser(description="TAMS Automater")
+    
+    for arg in arg_defaults:
+        parser.add_argument(arg, help=f"Setup {arg.capitalize()} variable.")
+    
+    params = parser.parse_args()
+    homepage = params.homepage
     username = params.username
     password = params.password
+    user_data = params.user_data
 
     # Load environment variables from .env file
     # load_dotenv()
@@ -76,7 +97,7 @@ def init(params):
         print_error(f"Unexpected error: {e}")
         sys.exit(1)
 
-    if not nav_url:
+    if not homepage:
         print_error("Error: Base URL is not set.")
         driver.quit()
         sys.exit(1)
@@ -104,7 +125,7 @@ def sort_by_date(data, data_key=None):
 
 def check_internet(url=None, timeout=global_timeout, retries=3):
     if url is None:
-        url = nav_url
+        url = homepage
 
     for attempt in range(1, retries + 1):
         try:
@@ -126,7 +147,7 @@ def check_internet(url=None, timeout=global_timeout, retries=3):
     sys.exit(1)
 
 def navigate(url):
-    new_url = f"{nav_url}/tams/"
+    new_url = f"{homepage}/tams/"
 
     if any(keyword in url.lower() for keyword in ["overtime", "officialbusiness", "leave"]):
         full_url = urljoin(new_url, f"filing/{url}")
@@ -227,7 +248,7 @@ def normalize_spaces(text):
     text = re.sub(r'\s+,', ',', text)
     return text
 
-def login(params):
+def login():
     try:
         # Assuming login-form is identified by ID; adjust as needed
         login_form = process_element(by=By.ID, locator="login-form")
@@ -237,7 +258,7 @@ def login(params):
             sys.exit(1)
         
         for key, value in vars(params).items():
-            if key != "homepage":
+            if key != arg_defaults[0]:
                 el = process_element(login_form, by=By.NAME, locator=key)
                 if not el:
                     print_error(f"Login input '{key}' not found.")
@@ -270,15 +291,10 @@ def login(params):
         driver.quit()
         sys.exit(1)
 
+
 def main():
-    arg_defaults = ["homepage", "username", "password"]
-    parser = argparse.ArgumentParser(description="TAMS Automater")
-    
-    for arg in arg_defaults:
-        parser.add_argument(arg, help=arg.capitalize())
-        
-    params = parser.parse_args()
-    init(params)
+
+    init()
 
     try:
         if not check_internet():

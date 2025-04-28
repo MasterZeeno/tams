@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 if ! command -v python3 >/dev/null 2>&1; then
   sudo apt install python -y
@@ -19,4 +19,4 @@ while IFS=" " read -r url user pass; do
   python3 tams.py "$url" "$user" "$pass"
 done < USERS
 
-deactivate >/dev/null 2>&1
+deactivate

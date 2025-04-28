@@ -4,7 +4,6 @@ import json
 import re
 import requests
 import sys
-# from dotenv import load_dotenv
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -12,7 +11,6 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException, NoSuchElementException, ElementClickInterceptedException
 from urllib.parse import urljoin
 from datetime import datetime
-import time
 
 global_timeout = 10  # Increased timeout for better reliability
 

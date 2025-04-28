@@ -10,11 +10,7 @@ install_pkg() {
   $is_termux && pkg=$(echo "$bin" | sed -E 's/"3"//g')
 
   ! cmd_exists "$bin" && \
-    ${pkg_mngr[@]} install "$pkg" -y
-}
-
-cmd_exec() {
-  cmd_exists "$1" && "$@"
+    ${pkg_mngr[@]} install "$pkg" -y >/dev/null 2>&1
 }
 
 resolve_pkg() {
@@ -33,6 +29,8 @@ else
 fi
 
 if (( ${#pkg_mngr[@]} )); then
+  ${pkg_mngr[@]} update >/dev/null 2>&1
+
   pkgs=(python3 python3-pip chromium-driver)
   
   for pkg in "${pkgs[@]}"; do
@@ -49,10 +47,8 @@ if (( ${#pkg_mngr[@]} )); then
 
   [[ -f requirements.txt ]] && pip -qqq install -r requirements.txt --break-system-packages
 
-<<<<<<< HEAD
   base_dir="$(pwd)/USERDATA"
   mkdir -p "$base_dir"
-  params=()
 
   while IFS=" " read -r homepage username password; do
     [[ -z "${homepage}${username}${password}" ]] && continue
@@ -60,17 +56,26 @@ if (( ${#pkg_mngr[@]} )); then
     homepage="https://${homepage}-tams.com.ph"
     user_data_dir="$base_dir/$username"
     mkdir -p "$user_data_dir"
-
-    for var in homepage username password user_data_dir; do
-      eval "val=\$var"
-      params[$var]="$val"
+    
+    # declare -A params=()
+    params=()
+    for v in homepage username password user_data_dir; do
+      declare -n var="$v"
+      params+=("$v=$var")
+      # params[$v]="$var"
     done
+    
+    echo "${params[@]}"
+    
+    # for key in "${!params[@]}"; do
+        # value="${params[$key]}"
+        # echo "KEY: $key, VALUE: $value"
+    # done
 
     # python tams.py "$homepage" "$username" "$password" "$user_data_dir"
   done < USERS
 
-  deactivate
+  cmd_exists deactivate && deactivate
 fi
-=======
+
 deactivate
->>>>>>> 929002e06c7be73391bebbea9947885617811474

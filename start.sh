@@ -1,23 +1,18 @@
 #!/bin/sh
 
-check_cmd() {
-  command -v "$1" >/dev/null 2>&1
-}
-
-check_cmd python || apt install python -y
-
-alias python='python3'
-alias pip='pip3'
+if ! command -v "$1" >/dev/null 2>&1; then
+  apt install python -y
+fi
 
 if [ ! -d venv ]; then
-  python -m venv venv
+  python3 -m venv venv
 fi
 
 . venv/bin/activate
 if [ -f requirements.txt ]; then
-  if pip -qqq install -r requirements.txt; then
-    [ -f main.py ] && python main.py
+  if pip3 -qqq install -r requirements.txt; then
+    [ -f main.py ] && python3 main.py
   fi
 fi
 
-deactivate
+deactivate >/dev/null 2>&1

@@ -37,15 +37,10 @@ if (( ${#pkg_mngr[@]} )); then
     install_pkg "$pkg"
   done
 
-  if ! $is_termux; then
-    alias python=${pkgs[0]}
-    alias pip=${pkgs[1]#${pkgs[0]}-}
-  fi
-
-  [[ -d venv ]] || python -m venv venv
+  [[ -d venv ]] || python3 -m venv venv
   . venv/bin/activate
 
-  [[ -f requirements.txt ]] && pip -qqq install -r requirements.txt --break-system-packages
+  [[ -f requirements.txt ]] && pip3 -qqq install -r requirements.txt --break-system-packages
 
   base_dir="$(pwd)/USERDATA"
   mkdir -p "$base_dir"
@@ -78,4 +73,4 @@ if (( ${#pkg_mngr[@]} )); then
   cmd_exists deactivate && deactivate
 fi
 
-deactivate
+# deactivate

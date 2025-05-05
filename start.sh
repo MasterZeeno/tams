@@ -63,7 +63,7 @@ if ! $TEST; then
   fi
 
   if (( ${#PKG_MNGR[@]} )); then
-    # ${PKG_MNGR[@]} update >/dev/null 2>&1
+    ${PKG_MNGR[@]} update >/dev/null 2>&1
 
     pkgs=(python3 python3-pip python3-venv chromium-driver)
     
@@ -71,30 +71,10 @@ if ! $TEST; then
       install_pkg "$pkg"
     done
 
-    [[ -d "$VDIR" ]] || python3 -m venv "$VDIR"
-    . "$VDIR/bin/activate"
+    [[ -f "$VDIR/bin/activate" ]] || python3 -m venv "$VDIR"
+    source "$VDIR/bin/activate"
 
     [[ -f "$REQ_TXT" ]] && pip3 -qqq install -r "$REQ_TXT" --break-system-packages
-
-    # while IFS=" " read -r HP UN PW; do
-    #   [[ -z "$UN" ]] && continue
-
-    #   HP="https://${HP}-tams.com.ph"
-    #   mkdir_var UD "$DATA_DIR/$UN"
-
-    #   for v in $(compgen -v); do
-    #     [[ ${#v} -gt 2 ]] && continue
-    #     var="${VARS[$v]}"
-    #     [[ -n "$var" ]] && echo "$var"
-    #   done
-      
-      # for key in "${!params[@]}"; do
-          # value="${params[$key]}"
-          # echo "KEY: $key, VALUE: $value"
-      # done
-
-      # python tams.py "$homepage" "$username" "$password" "$user_data_dir"
-    # done < USERS
   fi
 fi
 

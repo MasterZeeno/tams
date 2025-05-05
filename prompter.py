@@ -1,11 +1,20 @@
-def print_message(code, icon, message):
-    print(f"\033[{code}m  {icon} {message}\033[0m")
+def print_msg(code: int, icon: str = "✔", msg: str = ""):
+    color_range = 90
+    spacer = "  "
+    try:
+        code = int(code)
+    except (ValueError, TypeError):
+        code = 2  # Default to success green
+    # Clamp code to a safe range (0–7 for basic ANSI colors)
+    code = max(0, min(code, 7))
+    color_code = color_range + code  # Bright color range (90–97)
+    print(f"\033[{color_code}m{spacer}{icon} {msg}\033[0m")
 
-def print_success(message):
-    print_message(92, '', message)
+def print_error(msg: str):
+    print_msg(1, "✖", msg)
 
-def print_error(message):
-    print_message(91, '', message)
+def print_success(msg: str):
+    print_msg(2, "✔", msg)
 
-def print_warning(message):
-    print_message(93, '‼', message)
+def print_warning(msg: str):
+    print_msg(3, "⚠️", msg)

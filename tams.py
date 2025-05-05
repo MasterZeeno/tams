@@ -1,9 +1,10 @@
-import argparse
 import os
 import json
 import re
 import requests
 import sys
+import shlex
+import time
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -12,50 +13,44 @@ from selenium.common.exceptions import TimeoutException, NoSuchElementException,
 from urllib.parse import urljoin
 from datetime import datetime
 
-global_timeout = 10  # Increased timeout for better reliability
+global_timeout = 10
+color_range = 90
+spacer = "  "
 
-def print_success(message):
-    print(f"\033[92m  ✔ {message}\033[0m")  # Green text
+def print_msg(code: int, icon: str = "✔", msg: str = ""):
+    try:
+        code = int(code)
+    except (ValueError, TypeError):
+        code = 2  # Default to success green
+    # Clamp code to a safe range (0–7 for basic ANSI colors)
+    code = max(0, min(code, 7))
+    color_code = color_range + code  # Bright color range (90–97)
+    print(f"\033[{color_code}m{spacer}{icon} {msg}\033[0m")
 
-def print_error(message):
-    print(f"\033[91m  ✖ {message}\033[0m")  # Red text
+def print_error(msg: str):
+    print_msg(1, "✖", msg)
 
-def print_warning(message):
-    print(f"\033[93m  ⚠️ {message}\033[0m")  # Yellow (close to orange) text
+def print_success(msg: str):
+    print_msg(2, "✔", msg)
+
+def print_warning(msg: str):
+    print_msg(3, "⚠️", msg)
 
 def set_global(name, value):
     globals()[name] = value
 
-def parse_params(params):
-    param_dict = {}
-    for param in params:
-        key, value = param.split('=')
-        param_dict[key] = value
-    return param_dict
+def parse_args():
+    try:
+        pairs = shlex.split(' '.join(sys.argv[1:]))
+        return dict(pair.split('=', 1) for pair in pairs if '=' in pair)
+    except ValueError as e:
+        print(f"Error parsing parameters: {e}")
+        return {}
 
 def init():
-    global params
-    global homepage
-    global username
-    global password
-    global user_data
-    global driver
-    global arg_defaults
-
-    arg_defaults = ["homepage", "username", "password", "user_data"]
-    parser = argparse.ArgumentParser(description="TAMS Automater")
-    
-    for arg in arg_defaults:
-        parser.add_argument(arg, help=f"Setup {arg.capitalize()} variable.")
-    
-    params = parser.parse_args()
-    homepage = params.homepage
-    username = params.username
-    password = params.password
-    user_data = params.user_data
-
-    # Load environment variables from .env file
-    # load_dotenv()
+    set_global("params", parse_args())
+    for key, value in params.items():
+        set_global(key, value)
 
     # Setup the Chrome options
     options = webdriver.ChromeOptions()
@@ -87,17 +82,12 @@ def init():
     # driver = webdriver.Chrome(executable_path=DRIVER_PATH, options=options)
 
     try:
-        driver = webdriver.Chrome(options=options)
+        set_global("driver", webdriver.Chrome(options=options))
     except WebDriverException as e:
         print_error(f"WebDriver error: {e}")
         sys.exit(1)
     except Exception as e:
         print_error(f"Unexpected error: {e}")
-        sys.exit(1)
-
-    if not homepage:
-        print_error("Error: Base URL is not set.")
-        driver.quit()
         sys.exit(1)
 
 # Function to convert date string to timestamp for sorting
@@ -159,7 +149,7 @@ def navigate(url):
         sys.exit(1)
 
 def validate_and_create_path(path=None):
-    path = path or os.path.join(os.environ.get('PWD', ''), 'data')
+    path = path or os.path.join(os.environ.get('PWD', ''), 'USERDATA')
     try:
         os.makedirs(path, exist_ok=True)
     except Exception as e:
@@ -255,8 +245,8 @@ def login():
             driver.quit()
             sys.exit(1)
         
-        for key, value in vars(params).items():
-            if key != arg_defaults[0]:
+        for key, value in params.items():
+            if key != "homepage":
                 el = process_element(login_form, by=By.NAME, locator=key)
                 if not el:
                     print_error(f"Login input '{key}' not found.")
@@ -291,9 +281,6 @@ def login():
 
 
 def main():
-
-    init()
-
     try:
         if not check_internet():
             print_error("No internet connection. Please check your connection and try again.")
@@ -301,7 +288,7 @@ def main():
             sys.exit(1)
         
         navigate("Auth")
-        login(params)
+        login()
     
         url_list = ["attendance", "overtime", "officialbusiness", "leave"]
         main_table_data = {}
@@ -394,8 +381,8 @@ def main():
                 print_success(f"Sucessfully scrapped {url.title()} table.")
                 
         if main_table_data:
-            assets_path = validate_and_create_path()
-            json_path = os.path.join(assets_path, 'data.json')
+            userdata_path = validate_and_create_path(f"USERDATA/{username}")
+            json_path = os.path.join(userdata_path, 'data.json')
             
             try:
                 with open(json_path, 'w') as json_file:
@@ -412,4 +399,5 @@ def main():
         driver.quit()
 
 if __name__ == "__main__":
+    init()
     main()

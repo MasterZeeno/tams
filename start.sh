@@ -86,3 +86,5 @@ while IFS=" " read -r H U P; do
 done < USERS
 
 exec_cmd deactivate
+
+git add . && git commit -m "Update"; git push

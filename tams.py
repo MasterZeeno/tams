@@ -360,7 +360,7 @@ def main():
             if table_data:
                 flattened = [item for data in table_data for item in data]
                 main_table_data[url] = flattened
-                print_success(f"Sucessfully scrapped [{url.title()}] table.")
+                print_success(f"Scrapped [{url.title()}] table.")
                 
         if main_table_data:
             userdata_path = validate_and_create_path(f"USERDATA/{username}")
@@ -371,7 +371,7 @@ def main():
                     json.dump(main_table_data, json_file, indent=2)
                     
                 relative_path = os.path.relpath(json_path, os.getcwd())
-                print_success(f"Success! Data saved to: {relative_path}")
+                print_success(f"Data saved to: {relative_path}")
             except OSError as os_err:
                 print_error(f"Error saving data to file: {os_err}")
         else:

@@ -182,7 +182,7 @@ def scrape_table_data(url):
         }
         
         if url == "attendance":
-            row_data = { "id": date_to_int(cells[0].text.strip()), **row_data }
+            row_data = { "id": date_to_int(cells[0]), **row_data }
 
         table_data.append(row_data)
     

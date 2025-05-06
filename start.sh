@@ -80,10 +80,12 @@ if ! $TEST; then
   fi
 fi
 
+mkdir -p USERDATA
+
 while IFS=" " read -r H U P; do
   [[ -z "$U" ]] && continue
   H="https://${H}-tams.com.ph"
-  mkdir_recursive "USERDATA/$U"
+  # mkdir_recursive "USERDATA/$U"
   python3 tams.py "homepage=$H username=$U password=$P"
 done < USERS
 

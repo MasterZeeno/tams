@@ -86,7 +86,7 @@ def date_to_int(date_str):
 
     try:
         date_part = re.split(r"[,\s]+", normalize_spaces(date_str))[0]
-        dt = datetime.strptime(date_part, "%Y-%m-%d")
+        dt = datetime.strptime(date_part, "%Y-%m-%d").replace(tzinfo=timezone.utc)
         return int(dt.timestamp())
     except ValueError:
         return 0

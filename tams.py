@@ -185,6 +185,8 @@ def scrape_table_data(url):
         else:
             index = "date_from"
 
+        print(row_data.get(index, 0))
+
         row_data = { "timestamp": date_to_int(row_data.get(index, 0)), **row_data }
 
         table_data.append(row_data)

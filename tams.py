@@ -73,15 +73,13 @@ def init():
         sys.exit(1)
 
 # Function to convert date string to timestamp for sorting
-def parse_date(date_str):
-    date_str = str(date_str)
-    
+def date_to_int(date_str):
+    if not isinstance(date_str, str):
+        date_str = str(date_str)
+
     try:
-        # Extract date part and remove commas
-        date_part = date_str.split(" ")[0].strip().replace(",", "")
-        
-        # Convert to datetime and return timestamp
-        return datetime.strptime(date_part, "%Y-%m-%d").timestamp()
+        dt = datetime.strptime(date_str.split(',')[0], "%Y-%m-%d")        
+        return int(dt.strftime("%Y%m%d"))
     
     except ValueError:
         # Return a default timestamp in case of invalid format
@@ -93,7 +91,6 @@ def sort_by_date(data, data_key=None):
 
     if data_key is not None:
         sort_key = f"{data_key}_{sort_key}"
-        return sorted(data, key=lambda x: parse_date(x[sort_key]), reverse=True)
 
     return sorted(data, key=lambda x: x[sort_key], reverse=True)
 
@@ -184,8 +181,7 @@ def scrape_table_data(url):
         }
         
         if url == "attendance":
-            dt = datetime.strptime(str(cells[0].text.strip()).split(',')[0], "%Y-%m-%d")
-            row_data = { "id": int(dt.strftime("%Y%m%d")), **row_data }
+            row_data = { "id": date_to_int(cells[0].text.strip()), **row_data }
 
         table_data.append(row_data)
     

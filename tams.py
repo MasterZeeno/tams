@@ -81,12 +81,11 @@ def date_to_int(date_str):
         date_str = str(date_str)
 
     try:
-        dt = datetime.strptime(date_str.split(',')[0], "%Y-%m-%d")        
+        date_part = re.split(r"[,\s]+", date_str.strip())[0]
+        dt = datetime.strptime(date_part, "%Y-%m-%d")
         return int(dt.timestamp())
-    
     except ValueError:
-        # Return a default timestamp in case of invalid format
-        return 0  # Return epoch time for invalid dates
+        return 0
 
 # Sort the data based on the timestamp in descending order
 def sort_by_id(data):
@@ -173,14 +172,17 @@ def scrape_table_data(url):
 
         cells = [cell.text.strip() for cell in cells]
         row_data = {
-            res_data(header): res_data(header, cell)
+            header: cell
             for header, cell in zip(headers, cells)
-            if "action" not in header and "attachment" not in header
+            if "action" not in header and "attachment" not in header and "_id" not in header
         }
 
-        
+        index = "date_from"
         if url == "attendance":
-            row_data = { "id": date_to_int(cells[0]), **row_data }
+            index = index.split("_")[0]
+        elif url == "leave":
+            index = "duration"
+        row_data = { "id": date_to_int(row_data[index]), **row_data }
 
         table_data.append(row_data)
     

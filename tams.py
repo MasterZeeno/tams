@@ -368,7 +368,7 @@ def main():
             
             try:
                 with open(json_path, 'w') as json_file:
-                    json.dump(main_table_data, json_file, indent=2)
+                    json.dump([main_table_data], json_file, indent=2)
                     
                 relative_path = os.path.relpath(json_path, os.getcwd())
                 print_success(f"Success! Data saved to: {relative_path}")

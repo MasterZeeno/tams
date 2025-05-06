@@ -89,4 +89,6 @@ done < USERS
 
 exec_cmd deactivate
 
-git add . && git commit -m "Update"; git push
+git add . >/dev/null 2>&1 && \
+git commit -m "Update" >/dev/null 2>&1
+git push >/dev/null 2>&1

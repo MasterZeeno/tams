@@ -74,6 +74,8 @@ def init():
 
 # Function to convert date string to timestamp for sorting
 def parse_date(date_str):
+    date_str = str(date_str)
+    
     try:
         # Extract date part and remove commas
         date_part = date_str.split(" ")[0].strip().replace(",", "")
@@ -363,14 +365,14 @@ def main():
             else:
                 scraped_data = scrape_table_data(url)
                 if scraped_data:
-                    short = url
+                    short_name = url
 
                     if url == "overtime":
-                        short = "ot"
+                        short_name = "ot"
                     elif url == "officialbusiness":
-                        short = "ob"
+                        short_name = "ob"
 
-                    table_data.append(sort_by_date(scraped_data, short))
+                    table_data.append(sort_by_date(scraped_data, short_name))
             
             if table_data:
                 flattened = [item for data in table_data for item in data]

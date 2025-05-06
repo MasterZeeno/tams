@@ -11,7 +11,7 @@ install_pkg() {
 
   if ! cmd_exists "$bin"; then
     echo "Installing [$pkg]..."
-    ${PKG_MNGR[@]} install "$pkg" -y >/dev/null 2>&1
+    ${PKG_MNGR[@]} install -y "$pkg" >/dev/null 2>&1
   fi
 }
 

@@ -79,9 +79,10 @@ def init():
 def date_to_int(date_str):
     if not isinstance(date_str, str):
         date_str = str(date_str)
+    date_str = date_str.replace(",", "")
 
     try:
-        date_part = re.split(r"[,\s]+", date_str.strip())[0]
+        date_part = normalize_spaces(date_part.split(" ")[0])
         dt = datetime.strptime(date_part, "%Y-%m-%d")
         return int(dt.timestamp())
     except ValueError:
@@ -170,7 +171,7 @@ def scrape_table_data(url):
         if not cells:
             continue
 
-        cells = [cell.text.strip() for cell in cells]
+        cells = [normalize_spaces(cell.text) for cell in cells]
         row_data = {
             header: cell
             for header, cell in zip(headers, cells)

@@ -93,7 +93,7 @@ def date_to_int(date_str):
 
 # Sort the data based on the timestamp in descending order
 def sort_data(data):
-    return sorted(data, key=lambda x: int(x.get(sort_key, 0)), reverse=True)
+    return sorted(data, key=lambda x: int(x.get(sort_key, 0)))
 
 def check_internet(url=None, timeout=global_timeout, retries=3):
     url = url or homepage

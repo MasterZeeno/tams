@@ -6,7 +6,7 @@ import sys
 import shlex
 import time
 
-from prompter import print_success, print_error, print_warning
+from utils import print_success, print_error, print_warning
 
 from selenium import webdriver
 from selenium.webdriver.common.by import By
@@ -172,11 +172,16 @@ def scrape_table_data(url):
         cells = process_element(row, by=By.TAG_NAME, locator="td", multiple=True)
         if not cells:
             continue
+
         row_data = {
             header: cell.text.strip() 
             for header, cell in zip(headers, cells)
             if "action" not in header and "attachment" not in header
         }
+        
+        if url == "attendance":
+            row_data = { f"{url}_id": "yawa", **row_data }
+
         table_data.append(row_data)
     
     return table_data

@@ -88,8 +88,8 @@ def date_to_int(date_str):
         return 0
 
 # Sort the data based on the timestamp in descending order
-def sort_by_id(data):
-    return sorted(data, key=lambda x: int(x.get("id", 0)))
+def sort_by_timestamp(data):
+    return sorted(data, key=lambda x: int(x.get("timestamp", 0)))
 
 def check_internet(url=None, timeout=global_timeout, retries=3):
     url = url or homepage
@@ -184,18 +184,11 @@ def scrape_table_data(url):
         else:
             index = "date_from"
 
-        row_data = { "id": date_to_int(row_data.get(index, 0)), **row_data }
+        row_data = { "timestamp": date_to_int(row_data.get(index, 0)), **row_data }
 
         table_data.append(row_data)
     
     return table_data
-
-def res_data(header, cell=None):
-    if header.endswith("_id"):
-        if cell:
-            return int(cell) if cell.isdigit() else cell
-        return "id"
-    return cell or header
 
 def process_element(parent=None, by=By.ID, locator=None, multiple=False, timeout=global_timeout):
     if locator is None:
@@ -365,13 +358,13 @@ def main():
                         # Scrape table data for the selected month and year
                         scraped_data = scrape_table_data(url)
                         if scraped_data:
-                            table_data.append(sort_by_id(scraped_data))
+                            table_data.append(sort_by_timestamp(scraped_data))
                     else:
                         print_error("Month selector or year input not found")
             else:
                 scraped_data = scrape_table_data(url)
                 if scraped_data:
-                    table_data.append(sort_by_id(scraped_data))
+                    table_data.append(sort_by_timestamp(scraped_data))
             
             if table_data:
                 flattened = [item for data in table_data for item in data]

@@ -18,6 +18,9 @@ from datetime import datetime
 
 global_timeout = 10
 
+months = ["January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December"]
+
 def set_global(name, value):
     globals()[name] = value
 
@@ -86,13 +89,13 @@ def date_to_int(date_str):
         return 0  # Return epoch time for invalid dates
 
 # Sort the data based on the timestamp in descending order
-def sort_by_date(data, data_key=None):
+def sort_by_id(data, data_key=None):
     sort_key = "id"
 
     if data_key is not None:
         sort_key = f"{data_key}_{sort_key}"
 
-    return sorted(data, key=lambda x: x[sort_key], reverse=True)
+    return sorted(data, key=lambda x: int(x[sort_key]), reverse=True)
 
 def check_internet(url=None, timeout=global_timeout, retries=3):
     if url is None:
@@ -270,6 +273,8 @@ def login():
 
 
 def main():
+    init()
+
     try:
         if not check_internet():
             print_error("No internet connection. Please check your connection and try again")
@@ -287,8 +292,6 @@ def main():
             table_data = []
             
             if "attendance" in url.lower(): 
-                months = ["January", "February", "March", "April", "May", "June",
-                          "July", "August", "September", "October", "November", "December"]
                 current_month = datetime.now().month
                 current_year = datetime.now().year
                     
@@ -356,7 +359,7 @@ def main():
                         # Scrape table data for the selected month and year
                         scraped_data = scrape_table_data(url)
                         if scraped_data:
-                            table_data.append(sort_by_date(scraped_data))
+                            table_data.append(sort_by_id(scraped_data))
                     else:
                         print_error("Month selector or year input not found")
             else:
@@ -369,7 +372,7 @@ def main():
                     elif url == "officialbusiness":
                         short_name = "ob"
 
-                    table_data.append(sort_by_date(scraped_data, short_name))
+                    table_data.append(sort_by_id(scraped_data, short_name))
             
             if table_data:
                 flattened = [item for data in table_data for item in data]
@@ -395,5 +398,4 @@ def main():
         driver.quit()
 
 if __name__ == "__main__":
-    init()
     main()

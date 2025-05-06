@@ -82,7 +82,7 @@ def date_to_int(date_str):
     date_str = normalize_spaces(date_str.replace(",", " "))
 
     try:
-        date_part = date_part.split(" ")[0]
+        date_part = date_str.split(" ")[0]
         dt = datetime.strptime(date_part, "%Y-%m-%d")
         return int(dt.timestamp())
     except ValueError:

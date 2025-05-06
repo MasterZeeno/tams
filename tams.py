@@ -360,7 +360,7 @@ def main():
             if table_data:
                 flattened = [item for data in table_data for item in data]
                 main_table_data[url] = flattened
-                print_success(f"Scrapped [{url.title()}] table")
+                print_success(f"Scrapped: [{url.title()}] table")
                 
         if main_table_data:
             userdata_path = validate_and_create_path()

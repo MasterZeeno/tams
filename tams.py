@@ -16,6 +16,7 @@ from selenium.common.exceptions import TimeoutException, NoSuchElementException,
 from urllib.parse import urljoin
 from datetime import datetime
 
+sort_key = "timestamp"
 global_timeout = 10
 
 months = ["January", "February", "March", "April", "May", "June",
@@ -257,7 +258,8 @@ def login():
             login_form.submit()
         
         # Wait for login success, e.g., presence of lastname element
-        full_name = normalize_spaces(process_element(by=By.ID, locator="lastname").get_attribute("value"))
+        set_global("full_name", normalize_spaces(process_element(by=By.ID, locator="lastname").get_attribute("value")))
+        
         if full_name:
             print_success(f"Logged in as: [{full_name}]")
         else:
@@ -379,8 +381,8 @@ def main():
                 with open(json_path, 'w') as json_file:
                     json.dump(main_table_data, json_file, indent=2)
                     
-                relative_path = os.path.relpath(json_path, os.getcwd())
-                print_success(f"Saved: {relative_path}")
+                # relative_path = os.path.relpath(json_path, os.getcwd())
+                print_success(f"Saved: {username}.json")
             except OSError as os_err:
                 print_error(f"Error saving data to file: {os_err}")
         else:

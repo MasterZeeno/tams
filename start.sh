@@ -67,16 +67,16 @@ if ! $TEST; then
   if (( ${#PKG_MNGR[@]} )); then
     ${PKG_MNGR[@]} update >/dev/null 2>&1
 
-    pkgs=(python3 python3-pip python3-selenium python3-requests chromium-chromedriver)
+    pkgs=(python3 python3-pip chromium-chromedriver)
     
     for pkg in "${pkgs[@]}"; do
       install_pkg "$pkg"
     done
 
-    # [[ -f "$VDIR/bin/activate" ]] || python3 -m venv "$VDIR"
-    # source "$VDIR/bin/activate"
+    [[ -f "$VDIR/bin/activate" ]] || python3 -m venv "$VDIR"
+    source "$VDIR/bin/activate"
 
-    # [[ -f "$REQ_TXT" ]] && pip3 -qqq install -r "$REQ_TXT" --break-system-packages
+    [[ -f "$REQ_TXT" ]] && pip -qqq install -r "$REQ_TXT" --break-system-packages
   fi
 fi
 

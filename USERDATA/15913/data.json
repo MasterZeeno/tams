@@ -172,11 +172,20 @@
       "ot_out": "--"
     },
     {
-      "date": "2025-05-05, Monday",
-      "am_in": "7:03 AM",
+      "date": "2025-05-06, Tuesday",
+      "am_in": "7:15 AM",
       "lunch_out": "--",
       "lunch_in": "--",
       "pm_out": "--",
+      "ot_in": "--",
+      "ot_out": "7:07 AM"
+    },
+    {
+      "date": "2025-05-05, Monday",
+      "am_in": "7:03 AM",
+      "lunch_out": "12:02 PM",
+      "lunch_in": "12:39 PM",
+      "pm_out": "5:00 PM",
       "ot_in": "--",
       "ot_out": "--"
     }

@@ -177,12 +177,14 @@ def scrape_table_data(url):
             if "action" not in header and "attachment" not in header and "_id" not in header
         }
 
-        index = "date_from"
         if url == "attendance":
-            index = index.split("_")[0]
+            index = "date"
         elif url == "officialbusiness":
             index = "duration"
-        row_data = { "id": date_to_int(row_data[index]), **row_data }
+        else:
+            index = "date_from"
+
+        row_data = { "id": date_to_int(row_data.get(index, 0)), **row_data }
 
         table_data.append(row_data)
     

@@ -79,10 +79,9 @@ def init():
 def date_to_int(date_str):
     if not isinstance(date_str, str):
         date_str = str(date_str)
-    date_str = normalize_spaces(date_str.replace(",", " "))
 
     try:
-        date_part = date_str.split(" ")[0]
+        date_part = re.split(r"[,\s]+", normalize_spaces(date_str))[0]
         dt = datetime.strptime(date_part, "%Y-%m-%d")
         return int(dt.timestamp())
     except ValueError:
@@ -184,8 +183,6 @@ def scrape_table_data(url):
             index = "date_from"
         else:
             index = "duration"
-
-        print(row_data.get(index, 0))
 
         row_data = { "timestamp": date_to_int(row_data.get(index, 0)), **row_data }
 

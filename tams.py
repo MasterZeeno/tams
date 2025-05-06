@@ -87,11 +87,12 @@ def parse_date(date_str):
 
 # Sort the data based on the timestamp in descending order
 def sort_by_date(data, data_key=None):
-  sort_key = "id"
-  if data_key is not None:
-      sort_key = f"{data_key}_{sort_key}"
+    sort_key = "id"
 
-  return sorted(data, key=lambda x: parse_date(x[sort_key]), reverse=True)
+    if data_key:
+        sort_key = f"{data_key}_{sort_key}"
+
+    return sorted(data, key=lambda x: parse_date(x[sort_key]), reverse=True)
 
 def check_internet(url=None, timeout=global_timeout, retries=3):
     if url is None:

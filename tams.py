@@ -355,7 +355,7 @@ def main():
             else:
                 scraped_data = scrape_table_data(url)
                 if scraped_data:
-                    table_data.append(sort_by_date(scraped_data, "filed"))
+                    table_data.append(sort_by_date(scraped_data, "from"))
             
             if table_data:
                 flattened = [item for data in table_data for item in data]
@@ -371,7 +371,7 @@ def main():
                     json.dump(main_table_data, json_file, indent=2)
                     
                 relative_path = os.path.relpath(json_path, os.getcwd())
-                print_success(f"Data saved to: {relative_path}")
+                print_success(f"Saved: {relative_path}")
             except OSError as os_err:
                 print_error(f"Error saving data to file: {os_err}")
         else:

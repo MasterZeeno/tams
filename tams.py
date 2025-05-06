@@ -181,7 +181,7 @@ def scrape_table_data(url):
         }
         
         if url == "attendance":
-            dt = datetime.strptime(cells[0].text.strip().split(',')[0], "%Y-%m-%d")
+            dt = datetime.strptime(str(cells[0].text.strip()).split(',')[0], "%Y-%m-%d")
             row_data = { "id": int(dt.strftime("%Y%m%d")), **row_data }
 
         table_data.append(row_data)

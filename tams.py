@@ -91,8 +91,9 @@ def sort_by_date(data, data_key=None):
 
     if data_key:
         sort_key = f"{data_key}_{sort_key}"
+        return sorted(data, key=lambda x: parse_date(x[sort_key]), reverse=True)
 
-    return sorted(data, key=lambda x: parse_date(x[sort_key]), reverse=True)
+    return sorted(data, key=lambda x: x[sort_key], reverse=True)
 
 def check_internet(url=None, timeout=global_timeout, retries=3):
     if url is None:

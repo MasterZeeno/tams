@@ -82,7 +82,7 @@ def date_to_int(date_str):
 
     try:
         dt = datetime.strptime(date_str.split(',')[0], "%Y-%m-%d")        
-        return int(dt.strftime("%Y%m%d"))
+        return int(dt.timestamp())
     
     except ValueError:
         # Return a default timestamp in case of invalid format

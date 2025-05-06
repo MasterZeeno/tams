@@ -180,10 +180,10 @@ def scrape_table_data(url):
 
         if url == "attendance":
             index = "date"
-        elif url == "officialbusiness":
-            index = "duration"
-        else:
+        elif url == "overtime":
             index = "date_from"
+        else:
+            index = "duration"
 
         print(row_data.get(index, 0))
 

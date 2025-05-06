@@ -89,7 +89,7 @@ def parse_date(date_str):
 def sort_by_date(data, data_key=None):
   sort_key = "date"
   if data_key is not None:
-      sort_key += f"_{data_key}"
+      sort_key = data_key
 
   return sorted(data, key=lambda x: parse_date(x[sort_key]), reverse=True)
 
@@ -355,7 +355,14 @@ def main():
             else:
                 scraped_data = scrape_table_data(url)
                 if scraped_data:
-                    table_data.append(sort_by_date(scraped_data, "filed"))
+                    short = url
+
+                    if url = "overtime":
+                        short = "ot"
+                    elif url = "officialbusiness":
+                        short = "ob"
+
+                    table_data.append(sort_by_date(scraped_data, f"{short}_id"))
             
             if table_data:
                 flattened = [item for data in table_data for item in data]

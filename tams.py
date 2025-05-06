@@ -355,7 +355,7 @@ def main():
             else:
                 scraped_data = scrape_table_data(url)
                 if scraped_data:
-                    table_data.append(sort_by_date(scraped_data, "from"))
+                    table_data.append(sort_by_date(scraped_data, "filed"))
             
             if table_data:
                 flattened = [item for data in table_data for item in data]

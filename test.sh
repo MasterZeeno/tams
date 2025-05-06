@@ -1,16 +1,9 @@
 #!/usr/bin/env bash
 
-mkdir_recursive() {
-  local dir=$(realpath -m "$1")
-  dir="${dir#$(pwd)/}"
+pkgs=(python3 python3-pip python3-selenium chromium-chromedriver)
 
-  local paths=$(pwd)
-  IFS='/' read -ra folders <<< "$dir"
-  for folder in "${folders[@]}"; do
-    paths+="/$folder"
-    mkdir -p "$paths"
-  done
-}
+for pkg in "${pkgs[@]}"; do
+  echo "$pkg" | sed -E 's/(^| )((chromium|python3)-)/\1/Ig;s/^(pip)$/\1'"3"'/'
+done
 
 
-mkdir_recursive "$(pwd)/yawa/piste/kulera"

@@ -6,11 +6,11 @@ cmd_exists() {
 
 install_pkg() {
   local pkg="$1"
-  local bin=$(echo "$pkg" | sed -E 's/-driver//g')
+  local bin=$(echo "$pkg" | sed -E 's/(^| )((chromium|python3)-)/\1/Ig;s/^(pip)$/\1'"3"'/')
   $IS_TERMUX && pkg=$(echo "$bin" | sed -E 's/"3"//g')
 
   if ! cmd_exists "$bin"; then
-    echo "Installing [$bin]..."
+    echo "Installing [$pkg]..."
     ${PKG_MNGR[@]} install "$pkg" -y >/dev/null 2>&1
   fi
 }
@@ -67,16 +67,16 @@ if ! $TEST; then
   if (( ${#PKG_MNGR[@]} )); then
     ${PKG_MNGR[@]} update >/dev/null 2>&1
 
-    pkgs=(python3 python3-pip python3-venv chromium-driver)
+    pkgs=(python3 python3-pip python3-selenium python3-requests chromium-chromedriver)
     
     for pkg in "${pkgs[@]}"; do
       install_pkg "$pkg"
     done
 
-    [[ -f "$VDIR/bin/activate" ]] || python3 -m venv "$VDIR"
-    source "$VDIR/bin/activate"
+    # [[ -f "$VDIR/bin/activate" ]] || python3 -m venv "$VDIR"
+    # source "$VDIR/bin/activate"
 
-    [[ -f "$REQ_TXT" ]] && pip3 -qqq install -r "$REQ_TXT" --break-system-packages
+    # [[ -f "$REQ_TXT" ]] && pip3 -qqq install -r "$REQ_TXT" --break-system-packages
   fi
 fi
 
@@ -92,3 +92,5 @@ exec_cmd deactivate
 git add . >/dev/null 2>&1 && \
 git commit -m "Update" >/dev/null 2>&1
 git push >/dev/null 2>&1
+
+# selenium==4.9.1

@@ -79,10 +79,10 @@ def init():
 def date_to_int(date_str):
     if not isinstance(date_str, str):
         date_str = str(date_str)
-    date_str = date_str.replace(",", "")
+    date_str = normalize_spaces(date_str.replace(",", " "))
 
     try:
-        date_part = normalize_spaces(date_part.split(" ")[0])
+        date_part = date_part.split(" ")[0]
         dt = datetime.strptime(date_part, "%Y-%m-%d")
         return int(dt.timestamp())
     except ValueError:

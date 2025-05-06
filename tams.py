@@ -17,10 +17,7 @@ from urllib.parse import urljoin
 from datetime import datetime
 
 sort_key = "timestamp"
-global_timeout = 10
-
-months = ["January", "February", "March", "April", "May", "June",
-    "July", "August", "September", "October", "November", "December"]
+global_timeout = 3
 
 def set_global(name, value):
     globals()[name] = value
@@ -37,6 +34,12 @@ def init():
     set_global("params", parse_args())
     for key, value in params.items():
         set_global(key, value)
+
+    set_global("months", [])
+    for i in range(1, 13):
+        date_val = f"{datetime.now().year}-{i:02}-01"
+        dt = datetime.strptime(date_val, "%Y-%m-%d")
+        months.append(dt.strftime("%B"))
 
     # Setup the Chrome options
     options = webdriver.ChromeOptions()
@@ -89,8 +92,8 @@ def date_to_int(date_str):
         return 0
 
 # Sort the data based on the timestamp in descending order
-def sort_by_timestamp(data):
-    return sorted(data, key=lambda x: int(x.get("timestamp", 0)))
+def sort_data(data):
+    return sorted(data, key=lambda x: int(x.get(sort_key, 0)))
 
 def check_internet(url=None, timeout=global_timeout, retries=3):
     url = url or homepage
@@ -185,7 +188,7 @@ def scrape_table_data(url):
         else:
             index = "duration"
 
-        row_data = { "timestamp": date_to_int(row_data.get(index, 0)), **row_data }
+        row_data = { sort_key: date_to_int(row_data.get(index, 0)), **row_data }
 
         table_data.append(row_data)
     
@@ -360,13 +363,13 @@ def main():
                         # Scrape table data for the selected month and year
                         scraped_data = scrape_table_data(url)
                         if scraped_data:
-                            table_data.append(sort_by_timestamp(scraped_data))
+                            table_data.append(sort_data(scraped_data))
                     else:
                         print_error("Month selector or year input not found")
             else:
                 scraped_data = scrape_table_data(url)
                 if scraped_data:
-                    table_data.append(sort_by_timestamp(scraped_data))
+                    table_data.append(sort_data(scraped_data))
             
             if table_data:
                 flattened = [item for data in table_data for item in data]

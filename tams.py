@@ -357,9 +357,9 @@ def main():
                 if scraped_data:
                     short = url
 
-                    if url = "overtime":
+                    if url == "overtime":
                         short = "ot"
-                    elif url = "officialbusiness":
+                    elif url == "officialbusiness":
                         short = "ob"
 
                     table_data.append(sort_by_date(scraped_data, f"{short}_id"))

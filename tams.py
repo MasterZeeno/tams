@@ -90,12 +90,8 @@ def date_to_int(date_str):
 
 # Sort the data based on the timestamp in descending order
 def sort_by_id(data, data_key=None):
-    sort_key = "id"
-
-    if data_key is not None:
-        sort_key = f"{data_key}_{sort_key}"
-
-    return sorted(data, key=lambda x: int(x[sort_key]), reverse=True)
+    sort_key = f"{data_key}_id" if data_key else "id"
+    return sorted(data, key=lambda x: int(x.get(sort_key, 0)), reverse=True)
 
 def check_internet(url=None, timeout=global_timeout, retries=3):
     if url is None:

@@ -174,8 +174,9 @@ def scrape_table_data(url):
         if not cells:
             continue
 
+        cells = [cell.text.strip() for cell in cells]
         row_data = {
-            header: int(cell.text.strip()) if "_id" in header else cell.text.strip()
+            header: int(cell) if "_id" in header and cell.isdigit() else cell
             for header, cell in zip(headers, cells)
             if "action" not in header and "attachment" not in header
         }

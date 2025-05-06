@@ -94,8 +94,7 @@ def sort_by_id(data, data_key=None):
     return sorted(data, key=lambda x: int(x.get(sort_key, 0)))
 
 def check_internet(url=None, timeout=global_timeout, retries=3):
-    if url is None:
-        url = homepage
+    url = url or homepage
 
     for attempt in range(1, retries + 1):
         try:
@@ -175,10 +174,11 @@ def scrape_table_data(url):
 
         cells = [cell.text.strip() for cell in cells]
         row_data = {
-            header: int(cell) if "_id" in header and cell.isdigit() else cell
+            res_data(header): res_data(header, cell)
             for header, cell in zip(headers, cells)
             if "action" not in header and "attachment" not in header
         }
+
         
         if url == "attendance":
             row_data = { "id": date_to_int(cells[0]), **row_data }
@@ -186,6 +186,13 @@ def scrape_table_data(url):
         table_data.append(row_data)
     
     return table_data
+
+def res_data(header, cell=None):
+    if header.endswith("_id"):
+        if cell:
+            return int(cell) if cell.isdigit() else cell
+        return "id"
+    return cell or header
 
 def process_element(parent=None, by=By.ID, locator=None, multiple=False, timeout=global_timeout):
     if locator is None:

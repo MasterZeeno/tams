@@ -14,7 +14,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException, NoSuchElementException, ElementClickInterceptedException
 from urllib.parse import urljoin
-from datetime import datetime
+from datetime import datetime, timezone
 
 sort_key = "timestamp"
 global_timeout = 3

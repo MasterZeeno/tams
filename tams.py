@@ -89,7 +89,7 @@ def parse_date(date_str):
 def sort_by_date(data, data_key=None):
     sort_key = "id"
 
-    if data_key:
+    if data_key is not None:
         sort_key = f"{data_key}_{sort_key}"
         return sorted(data, key=lambda x: parse_date(x[sort_key]), reverse=True)
 

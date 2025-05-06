@@ -180,7 +180,7 @@ def scrape_table_data(url):
         }
         
         if url == "attendance":
-            row_data = { f"{url}_id": "yawa", **row_data }
+            row_data = { "id": cells[0].text.strip(), **row_data }
 
         table_data.append(row_data)
     

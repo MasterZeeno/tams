@@ -10,7 +10,7 @@ install_pkg() {
   $IS_TERMUX && pkg=$(echo "$bin" | sed -E 's/"3"//g')
 
   if ! cmd_exists "$bin"; then
-    echo "Installing [$pkg]..."
+    echo "Installing [$bin]..."
     ${PKG_MNGR[@]} install "$pkg" -y >/dev/null 2>&1
   fi
 }

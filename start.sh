@@ -9,8 +9,10 @@ install_pkg() {
   local bin=$(echo "$pkg" | sed -E 's/-driver//g')
   $IS_TERMUX && pkg=$(echo "$bin" | sed -E 's/"3"//g')
 
-  ! cmd_exists "$bin" && \
+  if ! cmd_exists "$bin"; then
+    echo "Installing [$pkg]..."
     ${PKG_MNGR[@]} install "$pkg" -y >/dev/null 2>&1
+  fi
 }
 
 resolve_pkg() {

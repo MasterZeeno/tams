@@ -180,7 +180,7 @@ def scrape_table_data(url):
         index = "date_from"
         if url == "attendance":
             index = index.split("_")[0]
-        elif url == "leave":
+        elif url == "officialbusiness":
             index = "duration"
         row_data = { "id": date_to_int(row_data[index]), **row_data }
 

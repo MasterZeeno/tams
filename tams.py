@@ -87,9 +87,9 @@ def parse_date(date_str):
 
 # Sort the data based on the timestamp in descending order
 def sort_by_date(data, data_key=None):
-  sort_key = "date"
+  sort_key = "id"
   if data_key is not None:
-      sort_key = data_key
+      sort_key = f"{data_key}_{sort_key}"
 
   return sorted(data, key=lambda x: parse_date(x[sort_key]), reverse=True)
 
@@ -174,7 +174,7 @@ def scrape_table_data(url):
             continue
 
         row_data = {
-            header: cell.text.strip() 
+            header: int(cell.text.strip()) if "_id" in header else cell.text.strip()
             for header, cell in zip(headers, cells)
             if "action" not in header and "attachment" not in header
         }
@@ -368,7 +368,7 @@ def main():
                     elif url == "officialbusiness":
                         short = "ob"
 
-                    table_data.append(sort_by_date(scraped_data, f"{short}_id"))
+                    table_data.append(sort_by_date(scraped_data, short))
             
             if table_data:
                 flattened = [item for data in table_data for item in data]

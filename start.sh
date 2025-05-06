@@ -65,9 +65,9 @@ if ! $TEST; then
   fi
 
   if (( ${#PKG_MNGR[@]} )); then
-    ${PKG_MNGR[@]} update >/dev/null 2>&1
+    # ${PKG_MNGR[@]} update >/dev/null 2>&1
 
-    pkgs=(python3 python3-pip chromium-chromedriver)
+    pkgs=(python3 python3-pip chromium-chromedriver git)
     
     for pkg in "${pkgs[@]}"; do
       install_pkg "$pkg"

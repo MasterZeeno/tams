@@ -89,9 +89,8 @@ def date_to_int(date_str):
         return 0  # Return epoch time for invalid dates
 
 # Sort the data based on the timestamp in descending order
-def sort_by_id(data, data_key=None):
-    sort_key = f"{data_key}_id" if data_key else "id"
-    return sorted(data, key=lambda x: int(x.get(sort_key, 0)))
+def sort_by_id(data):
+    return sorted(data, key=lambda x: int(x.get("id", 0)))
 
 def check_internet(url=None, timeout=global_timeout, retries=3):
     url = url or homepage
@@ -368,14 +367,7 @@ def main():
             else:
                 scraped_data = scrape_table_data(url)
                 if scraped_data:
-                    short_name = url
-
-                    if url == "overtime":
-                        short_name = "ot"
-                    elif url == "officialbusiness":
-                        short_name = "ob"
-
-                    table_data.append(sort_by_id(scraped_data, short_name))
+                    table_data.append(sort_by_id(scraped_data))
             
             if table_data:
                 flattened = [item for data in table_data for item in data]

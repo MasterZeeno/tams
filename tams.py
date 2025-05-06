@@ -101,19 +101,19 @@ def check_internet(url=None, timeout=global_timeout, retries=3):
         try:
             response = requests.get(url, timeout=timeout)
             if response.status_code == 200:
-                print_success("Internet connection verified.")
+                print_success("Internet connection verified")
                 return True
             else:
                 print_error(f"Received unexpected status code: {response.status_code}")
         except requests.ConnectionError as e:
             print_error(f"Attempt {attempt}/{retries} failed: Connection error: {e}")
         except requests.Timeout:
-            print_error(f"Attempt {attempt}/{retries} failed: Request timed out.")
+            print_error(f"Attempt {attempt}/{retries} failed: Request timed out")
         
         if attempt < retries:
             print_warning("Retrying in 1 second...")
             time.sleep(1)
-    print_error("Failed to establish internet connection after multiple attempts.")
+    print_error("Failed to establish internet connection after multiple attempts")
     sys.exit(1)
 
 def navigate(url):
@@ -144,24 +144,24 @@ def scrape_table_data(url):
     table_data = []
     table = process_element(by=By.TAG_NAME, locator="table")
     if not table:
-        print_error("Table not found.")
+        print_error("Table not found")
         return table_data
     
     header = process_element(table, by=By.TAG_NAME, locator="thead")
     if not header:
-        print_error("Table header not found.")
+        print_error("Table header not found")
         return table_data
     
     header_elems = process_element(header, by=By.TAG_NAME, locator="th", multiple=True)
     if not header_elems:
-        print_error("Table headers not found.")
+        print_error("Table headers not found")
         return table_data
     
     headers = [header.text.strip().replace('\n', ' ').replace(' ', '_').lower() for header in header_elems]
     
     tbody = process_element(table, by=By.TAG_NAME, locator="tbody")
     if not tbody:
-        print_error("Table body not found.")
+        print_error("Table body not found")
         return table_data
     
     rows = process_element(tbody, by=By.TAG_NAME, locator="tr", multiple=True)
@@ -183,7 +183,7 @@ def scrape_table_data(url):
 
 def process_element(parent=None, by=By.ID, locator=None, multiple=False, timeout=global_timeout):
     if locator is None:
-        print_error("Locator must be provided.")
+        print_error("Locator must be provided")
         return None
         
     if parent is None:
@@ -223,7 +223,7 @@ def login():
         # Assuming login-form is identified by ID; adjust as needed
         login_form = process_element(by=By.ID, locator="login-form")
         if not login_form:
-            print_error("Login form not found.")
+            print_error("Login form not found")
             driver.quit()
             sys.exit(1)
         
@@ -231,7 +231,7 @@ def login():
             if key != "homepage":
                 el = process_element(login_form, by=By.NAME, locator=key)
                 if not el:
-                    print_error(f"Login input '{key}' not found.")
+                    print_error(f"Login input '{key}' not found")
                     driver.quit()
                     sys.exit(1)
                 el.clear()
@@ -250,9 +250,9 @@ def login():
         # Wait for login success, e.g., presence of lastname element
         full_name = normalize_spaces(process_element(by=By.ID, locator="lastname").get_attribute("value"))
         if full_name:
-            print_success(f"Logged in as: [{full_name}].")
+            print_success(f"Logged in as: [{full_name}]")
         else:
-            print_error("Login failed: 'lastname' element not found.")
+            print_error("Login failed: 'lastname' element not found")
             driver.quit()
             sys.exit(1)
     
@@ -265,7 +265,7 @@ def login():
 def main():
     try:
         if not check_internet():
-            print_error("No internet connection. Please check your connection and try again.")
+            print_error("No internet connection. Please check your connection and try again")
             driver.quit()
             sys.exit(1)
         
@@ -321,7 +321,7 @@ def main():
                                 print_error(f"Error selecting month '{selected_month}': {e}")
                                 continue
                         else:
-                            print_warning(f"Month option '{selected_month}' not found.")
+                            print_warning(f"Month option '{selected_month}' not found")
                             continue
     
                         # Set the year; using send_keys instead of setting value directly
@@ -343,7 +343,7 @@ def main():
                                 print_warning(f"Error clicking search button: {e}")
                                 continue
                         else:
-                            print_warning("Search button not found.")
+                            print_warning("Search button not found")
                             continue
                         
                         # Scrape table data for the selected month and year
@@ -351,7 +351,7 @@ def main():
                         if scraped_data:
                             table_data.append(sort_by_date(scraped_data))
                     else:
-                        print_error("Month selector or year input not found.")
+                        print_error("Month selector or year input not found")
             else:
                 scraped_data = scrape_table_data(url)
                 if scraped_data:
@@ -360,11 +360,11 @@ def main():
             if table_data:
                 flattened = [item for data in table_data for item in data]
                 main_table_data[url] = flattened
-                print_success(f"Scrapped [{url.title()}] table.")
+                print_success(f"Scrapped [{url.title()}] table")
                 
         if main_table_data:
-            userdata_path = validate_and_create_path(f"USERDATA/{username}")
-            json_path = os.path.join(userdata_path, 'data.json')
+            userdata_path = validate_and_create_path()
+            json_path = os.path.join(userdata_path, f"{username}.json")
             
             try:
                 with open(json_path, 'w') as json_file:
@@ -375,7 +375,7 @@ def main():
             except OSError as os_err:
                 print_error(f"Error saving data to file: {os_err}")
         else:
-            print_error("No data collected from any of the URLs.")
+            print_error("No data collected from any of the URLs")
     
     finally:
         driver.quit()

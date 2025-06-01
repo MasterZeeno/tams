@@ -204,11 +204,21 @@
       "timestamp": 1746489600,
       "date": "2025-05-06, Tuesday",
       "am_in": "7:15 AM",
-      "lunch_out": "--",
-      "lunch_in": "--",
-      "pm_out": "--",
-      "ot_in": "--",
-      "ot_out": "7:07 AM"
+      "lunch_out": "12:01 PM",
+      "lunch_in": "12:37 PM",
+      "pm_out": "5:02 PM",
+      "ot_in": "5:40 PM",
+      "ot_out": "9:01 PM"
+    },
+    {
+      "timestamp": 1746576000,
+      "date": "2025-05-07, Wednesday",
+      "am_in": "6:58 AM",
+      "lunch_out": "12:01 PM",
+      "lunch_in": "12:42 PM",
+      "pm_out": "5:02 PM",
+      "ot_in": "5:48 PM",
+      "ot_out": "9:00 PM"
     }
   ],
   "overtime": [

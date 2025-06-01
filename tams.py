@@ -1,45 +1,63 @@
 import os
 import json
-import re
 import requests
-import sys
-import shlex
 import time
+import shlex
+import sys
 
-from utils import print_success, print_error, print_warning
+from utils import print_success, print_error, print_warning, normalize, date_to_int, resolve_path, sort_data, get_date
 
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException, NoSuchElementException, ElementClickInterceptedException
+
 from urllib.parse import urljoin
-from datetime import datetime, timezone
 
 sort_key = "timestamp"
-global_timeout = 3
+timeout = 9
+retries = 6
+sleep = 0.69
 
 def set_global(name, value):
     globals()[name] = value
-
-def parse_args():
+    
+def parse_args(args):
     try:
-        pairs = shlex.split(' '.join(sys.argv[1:]))
+        pairs = shlex.split(args)
         return dict(pair.split('=', 1) for pair in pairs if '=' in pair)
     except ValueError as e:
-        print(f"Error parsing parameters: {e}")
+        print(f"Error parsing arguments: {e}")
         return {}
-
-def init():
-    set_global("params", parse_args())
+    
+def init_params(args):
+    set_global("params", parse_args(args))
+    set_global("login_inputs", {})
     for key, value in params.items():
         set_global(key, value)
-
+        if key != "homepage":
+            login_inputs[key] = value
+    set_global("base_url", f"{homepage}/tams/")
     set_global("months", [])
+    set_global("current_month", get_date("month"))
+    set_global("current_year", get_date("year"))
     for i in range(1, 13):
-        date_val = f"{datetime.now().year}-{i:02}-01"
+        date_val = f"{current_year}-{i:02}-01"
         dt = datetime.strptime(date_val, "%Y-%m-%d")
         months.append(dt.strftime("%B"))
+    set_global("filling_url_list", ["overtime", "officialbusiness", "leave"])
+    set_global("url_list", filling_url_list)
+    url_list.append("attendance")
+    
+def abort(msg="Aborted"):
+    print_error(msg)
+    if driver:
+        driver.quit()
+    sys.exit(1)
+
+def init():
+    init_params()
 
     # Setup the Chrome options
     options = webdriver.ChromeOptions()
@@ -72,109 +90,83 @@ def init():
 
     try:
         set_global("driver", webdriver.Chrome(options=options))
+        driver.execute_cdp_cmd('Network.enable', {})
+        driver.execute_cdp_cmd('Network.setBlockedURLs', {
+            "urls": ["*.css"]
+        })
     except WebDriverException as e:
-        print_error(f"WebDriver error: {e}")
-        sys.exit(1)
+        abort(f"WebDriver error: {e}")
     except Exception as e:
-        print_error(f"Unexpected error: {e}")
-        sys.exit(1)
+        abort(f"Unexpected error: {e}")
 
-# Function to convert date string to timestamp for sorting
-def date_to_int(date_str):
-    if not isinstance(date_str, str):
-        date_str = str(date_str)
-
-    try:
-        date_part = re.split(r"[,\s]+", normalize_spaces(date_str))[0]
-        dt = datetime.strptime(date_part, "%Y-%m-%d").replace(tzinfo=timezone.utc)
-        return int(dt.timestamp())
-    except ValueError:
-        return 0
-
-# Sort the data based on the timestamp in descending order
-def sort_data(data):
-    return sorted(data, key=lambda x: int(x.get(sort_key, 0)))
-
-def check_internet(url=None, timeout=global_timeout, retries=3):
+def check_internet(url=None):
     url = url or homepage
 
     for attempt in range(1, retries + 1):
         try:
             response = requests.get(url, timeout=timeout)
-            if response.status_code == 200:
+            if status_code == 200:
                 print_success("Internet connection verified")
                 return True
             else:
-                print_error(f"Received unexpected status code: {response.status_code}")
+                abort(f"Attempt {attempt}/{retries} failed: status code: {status_code}")
         except requests.ConnectionError as e:
-            print_error(f"Attempt {attempt}/{retries} failed: Connection error: {e}")
+            abort(f"Attempt {attempt}/{retries} failed: Connection error: {e}")
         except requests.Timeout:
-            print_error(f"Attempt {attempt}/{retries} failed: Request timed out")
+            abort(f"Attempt {attempt}/{retries} failed: Request timed out")
         
         if attempt < retries:
             print_warning("Retrying in 1 second...")
-            time.sleep(1)
-    print_error("Failed to establish internet connection after multiple attempts")
-    sys.exit(1)
+            time.sleep(sleep)
+            
+    abort("Failed to establish internet connection after multiple attempts")
 
 def navigate(url):
-    new_url = f"{homepage}/tams/"
-
-    if any(keyword in url.lower() for keyword in ["overtime", "officialbusiness", "leave"]):
-        full_url = urljoin(new_url, f"filing/{url}")
+    if any(k in url.lower() for k in filling_url_list):
+        full_url = urljoin(base_url, f"filing/{url}")
     else:
-        full_url = urljoin(new_url, url)
+        full_url = urljoin(base_url, url)
     
     try:
         driver.get(full_url)
     except Exception as e:
-        print_error(f"Error navigating to {full_url}: {e}")
-        sys.exit(1)
+        abort(f"Error navigating to {full_url}: {e}")
 
-def validate_and_create_path(path=None):
-    path = path or os.path.join(os.environ.get('PWD', ''), 'USERDATA')
-    try:
-        os.makedirs(path, exist_ok=True)
-    except Exception as e:
-        print_error(f"Error creating directory '{path}': {e}")
-        driver.quit()
-        sys.exit(1)
-    return path
+def define_table(url):
+    navigate(url)
+    set_global("table_data", [])
+    
+    for el_name in ["table", "tbody", "tr", "thead", "th"]:
+        if "tr" in el_name:
+            el_parent = tbody
+        elif "th" in el_name:
+            el_parent = thead
+        else:
+            el_parent = table
+        
+        element = find_element(
+            parent=el_parent, by=By.TAG_NAME, locator=el_name,
+            True if "tr" in el_name or "th" in el_name else False
+        )
+        
+        if not element:
+            print_warning(f"Element '{el_name.title()}' not found")
+            return table_data
+            
+        set_global(el_name, element)
+        
+    set_global("headers", [h.text.strip().replace('\n', ' ').replace(' ', '_').lower() for h in th])
+    
 
 def scrape_table_data(url):
-    table_data = []
-    table = process_element(by=By.TAG_NAME, locator="table")
-    if not table:
-        print_error("Table not found")
-        return table_data
+    define_table(url)
     
-    header = process_element(table, by=By.TAG_NAME, locator="thead")
-    if not header:
-        print_error("Table header not found")
-        return table_data
-    
-    header_elems = process_element(header, by=By.TAG_NAME, locator="th", multiple=True)
-    if not header_elems:
-        print_error("Table headers not found")
-        return table_data
-    
-    headers = [header.text.strip().replace('\n', ' ').replace(' ', '_').lower() for header in header_elems]
-    
-    tbody = process_element(table, by=By.TAG_NAME, locator="tbody")
-    if not tbody:
-        print_error("Table body not found")
-        return table_data
-    
-    rows = process_element(tbody, by=By.TAG_NAME, locator="tr", multiple=True)
-    if not rows:
-        return table_data
-    
-    for row in rows:
-        cells = process_element(row, by=By.TAG_NAME, locator="td", multiple=True)
+    for r in tr:
+        cells = find_element(r, by=By.TAG_NAME, locator="td", multiple=True)
         if not cells:
             continue
 
-        cells = [normalize_spaces(cell.text) for cell in cells]
+        cells = [normalize(cell.text) for cell in cells]
         row_data = {
             header: cell
             for header, cell in zip(headers, cells)
@@ -188,92 +180,97 @@ def scrape_table_data(url):
         else:
             index = "duration"
 
-        row_data = { sort_key: date_to_int(row_data.get(index, 0)), **row_data }
-
-        table_data.append(row_data)
+        table_data.append({ sort_key: date_to_int(row_data.get(index, 0)), **row_data })
     
     return table_data
 
-def process_element(parent=None, by=By.ID, locator=None, multiple=False, timeout=global_timeout):
+def to_proper(string=None):
+    if not string:
+        return ""
+    return str(string).strip().title()
+    
+def null_err_msg(msg=None, by=None, post_msg=None, x=False, ret=None, locator=None):
+    final_msg = "Error"
+    if msg:
+        if locator is None:
+            locator = "element"
+        final_msg += f": {to_proper(msg)} [{to_proper(locator)}]"
+    if by:
+        final_msg += f", by [{to_proper(by)}]"
+    if post_msg:
+        final_msg += f"\n\n{to_proper(post_msg)}"
+    if x:
+        abort(final_msg)
+    else:
+        print_warning(final_msg)
+
+    return ret if isinstance(ret, bool) else None
+    
+def find_element(parent=None, by=By.ID, locator=None, multiple=False):
     if locator is None:
-        print_error("Locator must be provided")
+        print_warning("Locator must be provided")
         return None
         
     if parent is None:
         parent = driver
         
+    if multiple:
+        condition = EC.presence_of_all_elements_located((by, locator))
+    else:
+        condition = EC.presence_of_element_located((by, locator))
+        
     try:
-        if multiple:
-            elements = WebDriverWait(parent, timeout).until(
-                EC.presence_of_all_elements_located((by, locator))
-            )
-            return elements
-        else:
-            element = WebDriverWait(parent, timeout).until(
-                EC.presence_of_element_located((by, locator))
-            )
+        element = WebDriverWait(parent, timeout).until(condition)
+        if element is not None:
             return element
-    except TimeoutException:
-        return None
-    except NoSuchElementException:
-        print_warning(f"Element not found: {locator} by {by}")
-        return None
-    except Exception as e:
-        print_error(f"Error processing element '{locator}' by {by}: {e}")
-        return None
 
-def normalize_spaces(text):
-    if not isinstance(text, str):
-        text = str(text)
-    # Collapse all whitespace into single spaces
-    text = re.sub(r'\s+', ' ', text.strip())
-    # Remove space before commas
-    text = re.sub(r'\s+,', ',', text)
-    return text
+    except TimeoutException:
+        return null_err_msg(msg="timedout", locator=locator, by=by)
+    except NoSuchElementException:
+        return null_err_msg(msg="not found", locator=locator, by=by)
+    except Exception as e:
+        return null_err_msg(locator=locator, by=by, post_msg=e)
+        
+def process_element(parent=None, by, locator, action=None, value=None, x=False):
+    el = process_el(parent, by, locator)
+    
+    if el is not None:
+        if action is None:
+            return el
+            
+        if "click" in action:
+            el.click()
+        elif "send" in action:
+            if value is not None:
+                el.clear()
+                el.send_keys(str(value))
+                
+        time.sleep(sleep)
+    else:
+        return null_err_msg(msg="not found", locator=locator, x=True, ret=False)
 
 def login():
+    navigate("Auth")
+    
     try:
-        # Assuming login-form is identified by ID; adjust as needed
         login_form = process_element(by=By.ID, locator="login-form")
-        if not login_form:
-            print_error("Login form not found")
-            driver.quit()
-            sys.exit(1)
-        
+
         for key, value in params.items():
             if key != "homepage":
-                el = process_element(login_form, by=By.NAME, locator=key)
-                if not el:
-                    print_error(f"Login input '{key}' not found")
-                    driver.quit()
-                    sys.exit(1)
-                el.clear()
-                el.send_keys(value)
+                process_element(login_form, by=By.NAME, locator=key, action="send", value=value, x=True):
 
-        # Submit the form; assuming there's a submit button
-        submit_button = process_element(login_form, by=By.XPATH, locator=".//button[@type='submit']")
-        if submit_button:
-            try:
-                submit_button.click()
-            except ElementClickInterceptedException:
-                login_form.submit()
-        else:
+        if not click_element(login_form, by=By.XPATH, locator=".//button[@type='submit']"):
             login_form.submit()
         
-        # Wait for login success, e.g., presence of lastname element
-        set_global("full_name", normalize_spaces(process_element(by=By.ID, locator="lastname").get_attribute("value")))
+        set_global("full_name", normalize(find_element(by=By.ID, locator="lastname").get_attribute("value")))
         
         if full_name:
             print_success(f"Logged in as: [{full_name}]")
         else:
-            print_error("Login failed: 'lastname' element not found")
-            driver.quit()
-            sys.exit(1)
+            abort("Login failed: 'lastname' element not found")
     
     except Exception as e:
-        print_error(f"Failed to login: {e}")
-        driver.quit()
-        sys.exit(1)
+        abort(f"Failed to login: {e}")
 
 
 def main():
@@ -281,29 +278,20 @@ def main():
 
     try:
         if not check_internet():
-            print_error("No internet connection. Please check your connection and try again")
-            driver.quit()
-            sys.exit(1)
-        
-        navigate("Auth")
+            abort("No internet connection. Please check your connection and try again")
+         
         login()
     
-        url_list = ["attendance", "overtime", "officialbusiness", "leave"]
         main_table_data = {}
         
         for url in url_list:
             navigate(url)
             table_data = []
             
-            if "attendance" in url.lower(): 
-                current_month = datetime.now().month
-                current_year = datetime.now().year
-                    
+            if "attendance" in url.lower():
                 for increment in range(-1, 2):  # -1, 0, 1 for previous, current, and next month
-                    month_select = process_element(by=By.ID, locator="month")  
-                    year_input = process_element(by=By.NAME, locator="year")
-                    
-                    if month_select is not None and year_input is not None:
+                    if process_element(by=By.ID, locator="month", action="click", x=True):
+                        
                         adjusted_month = (current_month + increment - 1) % 12 + 1
                         adjusted_year = current_year
                         
@@ -314,62 +302,19 @@ def main():
                             adjusted_year += 1  # Next January -> Increment year
                             
                         selected_month = months[adjusted_month - 1]
-
-                        # Select the month
-                        try:
-                            month_select.click()
-                        except Exception as e:
-                            print_error(f"Error clicking month selector: {e}")
-                            continue
                         
-                        # Corrected XPath by adding the missing closing parenthesis
-                        month_option = process_element(
-                            parent=month_select, 
-                            by=By.XPATH,
-                            locator=f".//option[contains(text(), '{selected_month}')]"
-                        )
-                        if month_option is not None:
-                            try:
-                                month_option.click()
-                            except Exception as e:
-                                print_error(f"Error selecting month '{selected_month}': {e}")
-                                continue
-                        else:
-                            print_warning(f"Month option '{selected_month}' not found")
-                            continue
-    
-                        # Set the year; using send_keys instead of setting value directly
-                        try:
-                            year_input.clear()
-                            year_input.send_keys(str(adjusted_year))
-                        except Exception as e:
-                            print_warning(f"Error setting year '{adjusted_year}': {e}")
-                            continue
-                            
-                        # Click the search button
-                        search_btn = process_element(by=By.XPATH, locator="//button[@type='submit' and contains(text(), 'Search')]")
-                        if search_btn is not None:
-                            try:
-                                search_btn.click()
-                                # Optionally, wait for the table to reload
-                                time.sleep(2)  # Adjust as needed or use explicit waits
-                            except Exception as e:
-                                print_warning(f"Error clicking search button: {e}")
-                                continue
-                        else:
-                            print_warning("Search button not found")
-                            continue
-                        
-                        # Scrape table data for the selected month and year
+                        process_element(parent=month_select, by=By.XPATH, locator=f".//option[contains(text(), '{selected_month}')]", action="click")
+                        process_element(by=By.NAME, locator="year", action="send", value=adjusted_year, x=true)
+                        process_element(by=By.XPATH, locator="//button[@type='submit' and contains(text(), 'Search')]", action="click")
+  
                         scraped_data = scrape_table_data(url)
                         if scraped_data:
-                            table_data.append(sort_data(scraped_data))
-                    else:
-                        print_error("Month selector or year input not found")
+                            table_data.append(sort_data(scraped_data, sort_key))
+     
             else:
                 scraped_data = scrape_table_data(url)
                 if scraped_data:
-                    table_data.append(sort_data(scraped_data))
+                    table_data.append(sort_data(scraped_data, sort_key))
             
             if table_data:
                 flattened = [item for data in table_data for item in data]
@@ -377,8 +322,8 @@ def main():
                 print_success(f"Scrapped: [{url.title()}] table")
                 
         if main_table_data:
-            userdata_path = validate_and_create_path()
-            json_path = os.path.join(userdata_path, f"{username}.json")
+            json_path = resolve_path(f"{username}.json")
+            # json_path = f"{userdata_path}/{username}.json" # os.path.join(userdata_path, f"{username}.json")
             
             try:
                 with open(json_path, 'w') as json_file:
@@ -386,13 +331,13 @@ def main():
                     
                 # relative_path = os.path.relpath(json_path, os.getcwd())
                 print_success(f"Saved: {username}.json")
-            except OSError as os_err:
-                print_error(f"Error saving data to file: {os_err}")
+            except OSError as e:
+                abort(f"Error saving data to file: {e}")
         else:
-            print_error("No data collected from any of the URLs")
+            abort("No data collected from any of the URLs")
     
     finally:
-        driver.quit()
+        abort()
 
 if __name__ == "__main__":
     main()
